@@ -60,6 +60,33 @@ void ImageManager::RotateImage(std::vector<Gdiplus::Image*> images)
 	}
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="images"></param>
+void ImageManager::ApplyGreyScale(std::vector<Gdiplus::Image*> images)
+{
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="images"></param>
+void ImageManager::BrightenImage(std::vector<Gdiplus::Image*> images)
+{
+	for (const auto& image : images)
+	{
+		
+	}
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="images"></param>
+void ImageManager::LinearScaleImage(std::vector<Gdiplus::Image*> images)
+{
+}
 
 /// <summary>
 /// 
