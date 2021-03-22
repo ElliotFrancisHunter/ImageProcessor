@@ -88,6 +88,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ImageManager.cpp" />
     <ClCompile Include="Performance2.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -95,6 +96,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ImageManager.h" />
     <ClInclude Include="Performance2.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />

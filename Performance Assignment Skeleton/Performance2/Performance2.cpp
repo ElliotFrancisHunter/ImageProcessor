@@ -98,7 +98,7 @@ class TIMER
 
 CWinApp theApp;  // The one and only application object
 
-using namespace std;
+//using namespace std;
 
 
 
@@ -140,12 +140,12 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 
 		double elapsed_seconds = (double)elapsed.get_time() / (double)ticks_per_second;
 
-		cout << "Elapsed time (seconds): " << elapsed_seconds;
-		cout << endl;
-		cout << "Press a key to continue" << endl;
+		std::cout << "Elapsed time (seconds): " << elapsed_seconds;
+		std::cout << std::endl;
+		std::cout << "Press a key to continue" << std::endl;
 
 		char c;
-		cin >> c;
+		std::cin >> c;
 	}
 
 	return nRetCode;
