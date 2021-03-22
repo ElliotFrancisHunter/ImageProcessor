@@ -48,6 +48,18 @@ void ImageManager::SaveAsPNG(const std::vector<Gdiplus::Image*>& images)
 	}
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="images"></param>
+void ImageManager::RotateImage(std::vector<Gdiplus::Image*> images)
+{
+	for (const auto& image : images)
+	{
+		image->RotateFlip(Gdiplus::Rotate90FlipNone);
+	}
+}
+
 
 /// <summary>
 /// 
