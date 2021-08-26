@@ -2,12 +2,21 @@
 
 #include "stdafx.h"
 #include "Performance2.h"
-
+#include "opencv2/opencv.hpp"
+#include "opencv2/imgproc.hpp"
 #include <iostream>
+#include <concurrent_vector.h>
+#include <ppl.h>
+#include <filesystem>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+
+
+const std::string mSourcePath = "./Source/";
+const std::string mDestPath = "./Destination/";
 
 // Timer - used to established precise timings for code.
 class TIMER
@@ -98,9 +107,7 @@ class TIMER
 
 CWinApp theApp;  // The one and only application object
 
-using namespace std;
-
-
+//using namespace std;
 
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 {
@@ -122,8 +129,22 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 		//--------------------------------------------------------------------------------------
 		// Insert your code from here...
 
+		Concurrency::concurrent_vector<std::pair<cv::Mat, std::string>> matV;
+		for (const auto& file : std::filesystem::directory_iterator(mSourcePath))
+		{
+			matV.push_back(std::make_pair(cv::imread(file.path().string(), cv::ImreadModes::IMREAD_GRAYSCALE), file.path().filename().stem().string()));
+		}
 
+		Concurrency::parallel_for_each(matV.begin(), matV.end(), [&](std::pair<cv::Mat, std::string> image) {
 
+			cv::Mat dest;	
+			cv::transpose(image.first, dest); 
+			cv::flip(dest, dest, 1);
+			dest.convertTo(dest, -1, 1, 20); // Increase brightness by 20%
+			
+			cv::resize(dest, dest, cv::Size(dest.rows * 2, dest.cols * 2), 2, 2, cv::InterpolationFlags::INTER_LINEAR); // Bilinear scaling
+			cv::imwrite(mDestPath  + image.second + ".png", dest); // Save as png
+			}, concurrency::auto_partitioner());
 
 		//-------------------------------------------------------------------------------------------------------
 		// How long did it take?...   DO NOT CHANGE FROM HERE...
@@ -140,12 +161,12 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 
 		double elapsed_seconds = (double)elapsed.get_time() / (double)ticks_per_second;
 
-		cout << "Elapsed time (seconds): " << elapsed_seconds;
-		cout << endl;
-		cout << "Press a key to continue" << endl;
+		std::cout << "Elapsed time (seconds): " << elapsed_seconds;
+		std::cout << std::endl;
+		std::cout << "Press a key to continue" << std::endl;
 
 		char c;
-		cin >> c;
+		std::cin >> c;
 	}
 
 	return nRetCode;
