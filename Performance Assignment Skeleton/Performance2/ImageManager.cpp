@@ -1,10 +1,9 @@
 #include "stdafx.h"
 #include "ImageManager.h"
 
+
 ImageManager::ImageManager()
 {
-	
-
 
 }
 
@@ -12,12 +11,12 @@ ImageManager::ImageManager()
 ///		
 /// </summary>
 void ImageManager::ExtractFiles()
-{
+{	
 	for (const auto& file : std::filesystem::directory_iterator(mSourcePath))
 	{
-		std::cout << file.path() << std::endl;
-		mFileNames.push_back(file.path().string());
-		mImages.push_back(Gdiplus::Image::FromFile(file.path().filename().wstring().c_str()));
+		std::wstring filename = file.path();
+		const WCHAR* file = filename.c_str();
+		mImages.push_back(Gdiplus::Bitmap::FromFile(file));		
 	}
 }
 
@@ -25,12 +24,9 @@ void ImageManager::ExtractFiles()
 /// 
 /// </summary>
 /// <param name="images"></param>
-void ImageManager::SaveAsPNG(const std::vector<Gdiplus::Image*>& images)
+void ImageManager::SaveAsPNG()
 {
-	Gdiplus::GdiplusStartupInput input;
-	ULONG_PTR gdiplusToken;
-	Gdiplus::GdiplusStartup(&gdiplusToken, &input, NULL);
-
+	
 	CLSID encoderClsid;
 	Gdiplus::Status stat;
 	int result;
@@ -40,10 +36,10 @@ void ImageManager::SaveAsPNG(const std::vector<Gdiplus::Image*>& images)
 
 	int imgCount = 1;
 
-	for (const auto& image : images)
+	for (const auto& image : mImages)
 	{
-		std::wstring convFileName = std::wstring(imgCount + L".png");;
-		image->Save(convFileName.c_str(), &encoderClsid, NULL);
+		std::wstring convFileName = std::wstring(L"test.png");;
+		stat = image->Save(convFileName.c_str(), &encoderClsid, NULL);
 		++imgCount;
 	}
 }
@@ -52,9 +48,9 @@ void ImageManager::SaveAsPNG(const std::vector<Gdiplus::Image*>& images)
 /// 
 /// </summary>
 /// <param name="images"></param>
-void ImageManager::RotateImage(std::vector<Gdiplus::Image*> images)
+void ImageManager::RotateImage()
 {
-	for (const auto& image : images)
+	for (auto& image : mImages)
 	{
 		image->RotateFlip(Gdiplus::Rotate90FlipNone);
 	}
@@ -64,19 +60,51 @@ void ImageManager::RotateImage(std::vector<Gdiplus::Image*> images)
 /// 
 /// </summary>
 /// <param name="images"></param>
-void ImageManager::ApplyGreyScale(std::vector<Gdiplus::Image*> images)
+void ImageManager::ApplyGreyScale()
 {
+	for (auto& image : mImages)
+	{
+		UINT width = image->GetWidth();
+		UINT height = image->GetHeight();
+		Gdiplus::Color pixColour;
+		for (int x = 0; x < width; ++x)
+		{
+			for (int y = 0; y < height; ++y)
+			{
+				image->GetPixel(x, y, &pixColour);
+				UINT grey = pixColour.GetRed() + pixColour.GetGreen() + pixColour.GetBlue();
+				grey *= 0.3;
+				pixColour.SetFromCOLORREF(RGB(grey, grey, grey));
+				image->SetPixel(x, y, pixColour);
+			}
+		}
+	}
+	std::cout << "finished";
 }
 
 /// <summary>
 /// 
 /// </summary>
 /// <param name="images"></param>
-void ImageManager::BrightenImage(std::vector<Gdiplus::Image*> images)
+void ImageManager::BrightenImage()
 {
-	for (const auto& image : images)
+	for (auto& image : mImages)
 	{
+		UINT width = image->GetWidth();
+		UINT height = image->GetHeight();
+		Gdiplus::Color pixColour;
 		
+		for (int x = 0; x < width; ++x)
+		{
+			for (int y = 0; y < height; ++y)
+			{
+				image->GetPixel(x, y, &pixColour);
+				UINT bright = pixColour.GetRed() + pixColour.GetGreen() + pixColour.GetBlue();
+				bright *= 1.1;
+				pixColour.SetFromCOLORREF(RGB(bright, bright, bright));
+				image->SetPixel(x, y, pixColour);
+			}
+		}
 	}
 }
 
@@ -84,8 +112,14 @@ void ImageManager::BrightenImage(std::vector<Gdiplus::Image*> images)
 /// 
 /// </summary>
 /// <param name="images"></param>
-void ImageManager::LinearScaleImage(std::vector<Gdiplus::Image*> images)
+void ImageManager::LinearScaleImage()
 {
+	for (auto& image : mImages)
+	{		
+		Gdiplus::Graphics* graphic = Gdiplus::Graphics::FromImage(image);
+		graphic->SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeBilinear);
+		graphic->ScaleTransform(2,2, Gdiplus::MatrixOrderAppend);		
+	}
 }
 
 /// <summary>
@@ -96,7 +130,7 @@ void ImageManager::LinearScaleImage(std::vector<Gdiplus::Image*> images)
 /// <returns></returns>
 int ImageManager::GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
 {
-	UINT  encoderCount = 0;          // number of image encoders
+	UINT  encoderCount = 0;           // number of image encoders
 	UINT  encoderArrSize = 0;         // size of the image encoder array in bytes
 
 	Gdiplus::ImageCodecInfo* pImageCodecInfo = NULL;
