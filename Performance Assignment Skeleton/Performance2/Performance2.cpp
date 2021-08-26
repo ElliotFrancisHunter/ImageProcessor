@@ -2,15 +2,18 @@
 
 #include "stdafx.h"
 #include "Performance2.h"
-#include <opencv2/opencv.hpp>
+#include "opencv2/opencv.hpp"
 #include "opencv2/imgproc.hpp"
 #include <iostream>
 #include <concurrent_vector.h>
 #include <ppl.h>
+#include <filesystem>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+
 
 const std::string mSourcePath = "./Source/";
 const std::string mDestPath = "./Destination/";
@@ -106,14 +109,8 @@ CWinApp theApp;  // The one and only application object
 
 //using namespace std;
 
-//ImageManager im;
-
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 {
-	Gdiplus::GdiplusStartupInput input;
-	ULONG_PTR gdiplusToken;
-	Gdiplus::GdiplusStartup(&gdiplusToken, &input, NULL);
-
 	int nRetCode = 0;
 
 	// initialize Microsoft Foundation Classes, and print an error if failure
@@ -129,23 +126,25 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 		// Time the application's execution time.
 		TIMER start;	// DO NOT CHANGE THIS LINE. Timing will start here.
 
-		Concurrency::concurrent_vector<cv::Mat> matV;
 		//--------------------------------------------------------------------------------------
 		// Insert your code from here...
+
+		Concurrency::concurrent_vector<std::pair<cv::Mat, std::string>> matV;
 		for (const auto& file : std::filesystem::directory_iterator(mSourcePath))
 		{
-
+			matV.push_back(std::make_pair(cv::imread(file.path().string(), cv::ImreadModes::IMREAD_GRAYSCALE), file.path().filename().stem().string()));
 		}
-		cv::Mat sourceMat, destMat;
-		sourceMat = cv::imread("./Source/IMG_1.jpg", cv::ImreadModes::IMREAD_GRAYSCALE);
-		cv::transpose(sourceMat, destMat); 
-		cv::flip(destMat, destMat, 1);
-		destMat.convertTo(destMat, -1, 1, 50); // Increase all pixel values by 50 to increase brightness
-		
-		cv::resize(destMat, destMat, cv::Size(destMat.rows * 2, destMat.cols * 2), 2, 2, cv::InterpolationFlags::INTER_LINEAR);
 
-		imwrite("Test2.png", destMat);
+		Concurrency::parallel_for_each(matV.begin(), matV.end(), [&](std::pair<cv::Mat, std::string> image) {
 
+			cv::Mat dest;	
+			cv::transpose(image.first, dest); 
+			cv::flip(dest, dest, 1);
+			dest.convertTo(dest, -1, 1, 20); // Increase brightness by 20%
+			
+			cv::resize(dest, dest, cv::Size(dest.rows * 2, dest.cols * 2), 2, 2, cv::InterpolationFlags::INTER_LINEAR); // Bilinear scaling
+			cv::imwrite(mDestPath  + image.second + ".png", dest); // Save as png
+			}, concurrency::auto_partitioner());
 
 		//-------------------------------------------------------------------------------------------------------
 		// How long did it take?...   DO NOT CHANGE FROM HERE...
@@ -161,8 +160,6 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 		// Display the resulting time...
 
 		double elapsed_seconds = (double)elapsed.get_time() / (double)ticks_per_second;
-
-		Gdiplus::GdiplusShutdown(gdiplusToken);
 
 		std::cout << "Elapsed time (seconds): " << elapsed_seconds;
 		std::cout << std::endl;
